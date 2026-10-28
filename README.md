@@ -3,17 +3,16 @@
 **A keyless till for shielded Zcash.** Any phone, tablet or laptop becomes a private point of sale: enter your own Unified Address and a price, and Zectill produces a spec-exact [ZIP-321](https://zips.z.cash/zip-0321) payment request (a QR code and `zcash:` link) and keeps an invoice book until you're paid. It also handles payouts, bill splits and settlements. No server, no account, no build step, and no keys.
 
 [![Live demo](https://img.shields.io/badge/live%20demo-zectill--sp.netlify.app-10b981)](https://zectill-sp.netlify.app)
-[![Spec tests](https://img.shields.io/badge/spec%20tests-213%2F213%20passing-10b981)](https://zectill-sp.netlify.app/tests.html)
+[![Spec tests](https://img.shields.io/badge/spec%20tests-215%2F215%20passing-10b981)](https://zectill-sp.netlify.app/tests.html)
 ![Build step](https://img.shields.io/badge/build%20step-none-555)
 ![Runtime dependencies](<https://img.shields.io/badge/runtime%20deps-0%20(1%20vendored%2C%20MIT)-555>)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-<img src="docs/icons/play.svg" width="16" height="16" alt=""> **[Try it live](https://zectill-sp.netlify.app)** · <img src="docs/icons/shield.svg" width="16" height="16" alt=""> **[Run the 213 spec checks in your browser](https://zectill-sp.netlify.app/tests.html)** · <img src="docs/icons/video.svg" width="16" height="16" alt=""> **[Demo video](TODO-ADD-VIDEO-LINK)**
+<img src="docs/icons/play.svg" width="16" height="16" alt=""> **[Try it live](https://zectill-sp.netlify.app)** · <img src="docs/icons/shield.svg" width="16" height="16" alt=""> **[Run the 215 spec checks in your browser](https://zectill-sp.netlify.app/tests.html)** · <img src="docs/icons/video.svg" width="16" height="16" alt=""> **[Demo video](TODO-ADD-VIDEO-LINK)**
 
-> <img src="docs/icons/todo.svg" width="16" height="16" alt=""> **TODO before submitting:** fill in the video link above, and these two lines.
->
-> - **Team:** `Team Zectill`
-> - **Hackathon:** `ZECATHON by zkSNARKs`
+
+ - **Team:** `Team Zectill`
+ - **Hackathon:** `ZECATHON by zkSNARKs`
 
 ![Creating an invoice: the address is decoded live and the QR code updates as you type](docs/invoice.png)
 
@@ -38,7 +37,7 @@ Every claim below can be checked in one click or one minute.
 | **Payments match even if a wallet drops the memo**                                                         | _Unique amounts_ tests: each invoice amount carries a per-ID tag of 1–999 zatoshis. Matching by amount is refused when two open invoices share an amount or the amount is round.                                                                   |
 | **Batch requests are correct, not just plausible**                                                         | _Batch requests_ tests: every payout, bill-split and settlement request is parsed back the way a wallet would read it.                                                                                                                             |
 
-**By the numbers:** 213 checks · 60 official address vectors · every ZIP-321 spec example · 0 servers · 0 build steps · 1 vendored library (QR drawing, MIT, SHA-384 pinned) · about 300 KB in total with no framework · 12 fiat currencies · needs no network after the page loads, except for fiat rates.
+**By the numbers:** 215 checks · 60 official address vectors · every ZIP-321 spec example · 0 servers · 0 build steps · 1 vendored library (QR drawing, MIT, SHA-384 pinned) · about 300 KB in total with no framework · 12 fiat currencies · needs no network after the page loads, except for fiat rates.
 
 ---
 
@@ -87,11 +86,11 @@ flowchart LR
 | ZIP-321 engine: Base64URL memos (512 bytes), single-invoice URI builder   | <img src="docs/icons/check.svg" width="16" height="16" alt=""> Byte-identical to librustzcash, checked against the spec examples | Full parser, used by the Inspect tab; canonical amounts; exact `qchar` encoding                                  |
 | Strict `u1` address validation                                            | <img src="docs/icons/check.svg" width="16" height="16" alt=""> Complete ZIP-316 decode, not a prefix check | Identifies every Zcash address type and explains why each is refused; revision 2 (`zu`/`tu`) and expiry metadata |
 | Live QR code, copy, "Open in wallet"                                      | <img src="docs/icons/check.svg" width="16" height="16" alt=""> QR code redraws on every keystroke and disappears the moment any field is invalid; one-click copy of the payment link; "Open in wallet" launches the customer's Zcash wallet; drawn by a self-hosted, maintained library | QR size warnings, PNG payment cards, printable invoices and receipts                                             |
-| "Mark as paid" toggle                                                     | <img src="docs/icons/check.svg" width="16" height="16" alt=""> Payments are matched from pasted wallet history (memo ID or unique amount), or recorded by hand with a transaction ID | Optional merchant PIN with a shuffled keypad; press-and-hold when no PIN is set; part-payments; undo |
+| "Mark as paid" toggle                                                     | <img src="docs/icons/check.svg" width="16" height="16" alt=""> Payments are matched from pasted wallet history (memo ID or unique amount), or recorded by hand with a transaction ID | Optional merchant PIN with a shuffled keypad; press-and-hold when no PIN is set; part-payments with a balance request; undo |
 | Batch payouts from `address, amount` lines                                | <img src="docs/icons/check.svg" width="16" height="16" alt=""> One multi-recipient request, each line with its own memo | Bill split and settlement modes; CSV and spreadsheet paste; errors by line number                                |
 | `localStorage` history                                                    | <img src="docs/icons/check.svg" width="16" height="16" alt=""> A full invoice book: statuses, totals, search, filters | CSV export, JSON backup and restore, void, duplicate, delete with undo                                           |
 | Responsive POS layout, error handling, deployable                         | <img src="docs/icons/check.svg" width="16" height="16" alt=""> Phone, tablet and desktop layouts; every field explains its own problem in plain words; live on Netlify with a strict Content-Security-Policy | Full-screen customer screen that keeps the display awake; fiat pricing at a live rate locked for 5–60 minutes    |
-| Test it                                                                   | <img src="docs/icons/check.svg" width="16" height="16" alt=""> 213 checks against official vectors, runnable in any browser and in CI | Wallet compatibility kit for testing real wallets on testnet                                                     |
+| Test it                                                                   | <img src="docs/icons/check.svg" width="16" height="16" alt=""> 215 checks against official vectors, runnable in any browser and in CI | Wallet compatibility kit for testing real wallets on testnet                                                     |
 
 ---
 
@@ -115,7 +114,7 @@ flowchart LR
 6. Open **Invoices → Match payments** and paste a line such as `2026-10-28, 0.25, INV-XXXXXX` using one of your invoice IDs.
 7. Open **Batch → Bill split → Fill demo data**, then click a name to show that person's code.
 8. Open **Inspect → Try the ZIP-321 spec example**.
-9. Open **[Spec tests](https://zectill-sp.netlify.app/tests.html)** and watch 213 checks pass.
+9. Open **[Spec tests](https://zectill-sp.netlify.app/tests.html)** and watch 215 checks pass.
 
 To run it locally, open `index.html` directly or serve the folder with `python -m http.server 8080`. Clipboard access needs HTTPS or `localhost`. For end-to-end tests with real funds, use your own **testnet** address; demo addresses are deliberately unpayable.
 
@@ -133,14 +132,15 @@ To run it locally, open `index.html` directly or serve the folder with `python -
   - _Safeguards:_ Zectill matches by amount only when the amount isn't round (tagged, or precise to the zatoshi) and belongs to exactly one open invoice. Every match says whether it came from the memo or the amount.
   - _Turning it off:_ switch off **Settings → Unique amounts** to charge exact prices. Memo matching still works; only the fallback for payments without a memo is lost.
 - Saving locks the invoice so it always matches the QR code the customer has. Sharing, printing or showing the code saves it automatically.
-- **Customer screen:** full screen, always light for reliable scanning, with a large QR code, the fiat price and the quote countdown. It keeps the display awake where the browser supports it. Without a PIN, "Payment received" is press-and-hold, so a stray tap does nothing.
+- **Customer screen:** full screen, always light for reliable scanning, with a large QR code, the fiat price and the quote countdown. It keeps the display awake where the browser supports it. Without a PIN, "Payment received" is press-and-hold, so a stray tap does nothing. It records the full amount; for anything else, use **Received a different amount?** below it.
 - **Merchant PIN (optional):** once set, "Payment received" becomes a plain tap, and confirming a payment or leaving the customer screen needs the PIN, so a customer can't mark their own invoice paid. Digits show as dots, and the keypad is reshuffled every time so watching fingers reveals nothing. Five wrong tries pause the keypad (30 s, then doubling), and a page reload reopens the locked screen. Only a salted hash of the PIN is stored.
 - Save a PNG payment card, print an invoice with its QR code, or print a receipt once paid.
 
 **Getting paid**
 
 - **Match payments:** paste your wallet's history (a CSV export, copied memos, or `z_listreceivedbyaddress`-style JSON, whose hex memos are decoded). Zectill matches by the invoice ID in the memo, or by unique amount when the memo is missing, and proposes paid, part-paid or check for each invoice.
-- Record a payment by hand with the amount received and an optional transaction ID (validated as 64 hex characters). Underpayments become part-paid. Recording a payment, voiding and deleting can all be undone.
+- **Record payment** (under the invoice preview, or on any row in the invoice book) takes the amount received and an optional transaction ID (validated as 64 hex characters). Underpayments become part-paid. On the customer screen, **Received a different amount?** opens the same dialog without leaving the screen (behind the PIN, if one is set), and a short payment immediately turns the QR code into a balance request. Recording a payment, voiding and deleting can all be undone.
+- **Collect the balance:** a part-paid invoice stays open and asks only for what is still owed. **Request balance** shows a new QR code for just the balance, with the same address and invoice ID in the memo, and copied links, PNG cards and printed invoices switch to the balance too. Payments add up, and the invoice turns paid once the total covers it. Matching is checked against the balance, and pasting the same wallet history again never counts a recorded transaction twice. A balance stays fixed in ZEC; it isn't re-priced at a new fiat rate.
 - Invoice book: outstanding, collected and collected-today totals, search, status filters, void, duplicate, and CSV export (formula-injection safe, UTF-8 with BOM for Excel).
 
 **Batch payments**
@@ -240,7 +240,7 @@ Shielded payments can only be seen with a viewing key. Zectill doesn't ask for o
 
 ## Testing
 
-Open **[tests.html](https://zectill-sp.netlify.app/tests.html)**. It runs the shipped engine, with nothing mocked, against official vectors: **213 checks**, all passing.
+Open **[tests.html](https://zectill-sp.netlify.app/tests.html)**. It runs the shipped engine, with nothing mocked, against official vectors: **215 checks**, all passing.
 
 | Group                                                                                                                 | Source                                                      |
 | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |

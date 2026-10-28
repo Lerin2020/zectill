@@ -2174,6 +2174,21 @@ dialog::backdrop {
   gap: 8px;
   padding-top: 16px;
 }
+.pos-other {
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  color: #046c4e;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pos-other:hover {
+  color: #0d1419;
+}
 .pos .btn-secondary {
   background: #f3f5f7;
   color: #0d1419;

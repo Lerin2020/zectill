@@ -620,6 +620,42 @@
   }
 
   const isOpen = (r) => r.status === "pending" || r.status === "partial";
+
+  /* Payments add up: a part-paid invoice stays open and asks only for its balance. */
+  const receivedOf = (r) =>
+    r.receivedZats && (r.status === "partial" || r.status === "paid")
+      ? BigInt(r.receivedZats)
+      : 0n;
+  const balanceOf = (r) => {
+    const left = BigInt(r.zats) - receivedOf(r);
+    return left > 0n ? left : 0n;
+  };
+  const paymentsOf = (r) =>
+    r.payments ||
+    (r.receivedZats
+      ? [{ zats: r.receivedZats, txid: r.txid || "", at: r.paidAt, via: r.paidVia }]
+      : []);
+  /* What the customer is asked to pay now: the whole invoice, or a part-paid invoice's balance
+     (same address and memo, so the balance payment is matched to the same invoice). */
+  function requestOf(r) {
+    if (r.status !== "partial")
+      return { uri: r.uri, zats: BigInt(r.zats), tag: r.amountTag, balance: false };
+    const zats = balanceOf(r);
+    return {
+      zats,
+      tag: null,
+      balance: true,
+      uri: Z.zip321.render([
+        {
+          address: r.address,
+          zats,
+          memo: Z.encodeMemo(r.memo || "").bytes,
+          label: r.label || null,
+          message: r.message || null,
+        },
+      ]),
+    };
+  }
   const isExpired = (r) =>
     r.status === "pending" &&
     !!r.expiresAt &&
@@ -1056,7 +1092,8 @@
       uri: ev.ok ? ev.uri : "",
     });
     $("pv-print").lastChild.textContent = "Print";
-    $("pv-paid").lastChild.textContent = "Mark paid";
+    $("pv-paid").lastChild.textContent = "Record payment";
+    $("pv-pos").lastChild.textContent = "Show to customer";
   }
 
   function setShare({ share, pos, print, paid, uri }) {
@@ -1081,7 +1118,10 @@
     $("inv-locked").hidden = false;
     $("inv-fields").disabled = true;
     $("inv-actions").hidden = true;
-    $("inv-locked-text").textContent = open
+    const req = requestOf(r);
+    $("inv-locked-text").textContent = req.balance
+      ? `Part-paid: ${fmtZ(receivedOf(r))} of ${fmtZ(zats)} ${coin} received. The QR code now asks only for the ${fmtZ(req.zats)} ${coin} balance.`
+      : open
       ? "Saved. The details are locked so they always match the QR code your customer sees."
       : r.status === "void"
         ? "This invoice was voided. Its QR code should not be used."
@@ -1099,12 +1139,12 @@
     setBadge("pv-status", st.label, st.cls);
     densityTag(
       $("pv-density"),
-      pvQR.show(r.uri, qrLabel(zats, r.address, r.net)),
-      r.uri,
+      pvQR.show(req.uri, qrLabel(req.zats, r.address, r.net)),
+      req.uri,
     );
     const done =
       r.status === "paid" || r.status === "partial" || r.status === "void";
-    $("pv-stamp").hidden = !done;
+    $("pv-stamp").hidden = !done || req.balance;
     $("pv-stamp").classList.toggle("is-void", r.status === "void");
     $("pv-stamp")
       .querySelector("use")
@@ -1116,25 +1156,28 @@
           ? "PART-PAID"
           : "PAID";
     $("pv-expired").hidden = !expired;
-    $("pv-amount").replaceChildren(...amountNodes(zats, r.amountTag));
-    $("pv-fiat").textContent = r.fiat
-      ? `${fmtFiat(+r.fiat.value, r.fiat.cur)} · 1 ${coin} = ${fmtFiat(r.fiat.rate, r.fiat.cur)}`
-      : "";
+    $("pv-amount").replaceChildren(...amountNodes(req.zats, req.tag));
+    $("pv-fiat").textContent = req.balance
+      ? `Balance due · ${fmtZ(receivedOf(r))} of ${fmtZ(zats)} ${coin} received`
+      : r.fiat
+        ? `${fmtFiat(+r.fiat.value, r.fiat.cur)} · 1 ${coin} = ${fmtFiat(r.fiat.rate, r.fiat.cur)}`
+        : "";
     $("pv-id").textContent = r.id;
     $("pv-addr").textContent = short(r.address, 10, 8);
     $("pv-addr").title = r.address;
-    $("pv-uri").textContent = r.uri;
+    $("pv-uri").textContent = req.uri;
     const live = r.status === "pending" && !expired;
     setShare({
-      share: live || r.status === "partial",
-      pos: live || r.status === "partial",
+      share: live || req.balance,
+      pos: live || req.balance,
       print: r.status !== "void",
       paid: r.status !== "void",
-      uri: live || r.status === "partial" ? r.uri : "",
+      uri: live || req.balance ? req.uri : "",
     });
-    $("pv-print").lastChild.textContent = done ? "Receipt" : "Print";
+    $("pv-pos").lastChild.textContent = req.balance ? "Request balance" : "Show to customer";
+    $("pv-print").lastChild.textContent = done && !req.balance ? "Receipt" : "Print";
     $("pv-paid").lastChild.textContent =
-      r.status === "paid" ? "Edit payment" : "Mark paid";
+      r.status === "paid" ? "Edit payment" : "Record payment";
   }
 
   function fillForm(r) {
@@ -1354,7 +1397,7 @@
 
   async function refreshInvoiceQuote(id) {
     const r = Inv.get(id);
-    if (!r || !r.fiat || !isOpen(r)) return;
+    if (!r || !r.fiat || r.status !== "pending") return; // a part-paid balance stays fixed in ZEC
     try {
       const rate = await getRate(r.fiat.cur, true),
         q = makeQuote(r.fiat.value, r.fiat.cur, rate);
@@ -1427,13 +1470,22 @@
 
   /* ============================================================ payment recording */
 
+  /* On a part-paid invoice a payment is added to what was already received; otherwise it sets
+     the amount received. zats == null means "the rest of the amount due". */
   function applyPayment(id, { zats, txid, via }) {
     let status = null;
     Inv.patch(id, (x) => {
       const due = BigInt(x.zats),
-        got = zats == null ? due : zats;
-      x.receivedZats = String(got);
-      x.status = got >= due ? "paid" : "partial";
+        adding = x.status === "partial",
+        prior = adding ? receivedOf(x) : 0n,
+        got = zats == null ? due - prior : zats,
+        total = prior + got;
+      x.payments = [
+        ...(adding ? paymentsOf(x) : []),
+        { zats: String(got), txid: txid || "", at: nowIso(), via },
+      ];
+      x.receivedZats = String(total);
+      x.status = total >= due ? "paid" : "partial";
       x.paidAt = nowIso();
       if (txid) x.txid = txid;
       x.paidVia = via;
@@ -1441,25 +1493,27 @@
     });
     return status;
   }
-  function undoPayment(id) {
-    Inv.patch(id, (x) => {
-      x.status = "pending";
-      x.paidAt = null;
-      x.receivedZats = null;
-      x.paidVia = null;
-    });
+  const PAYMENT_FIELDS = ["status", "paidAt", "receivedZats", "paidVia", "txid", "payments"];
+  function paymentState(id) {
+    const r = Inv.get(id);
+    return r ? Object.fromEntries(PAYMENT_FIELDS.map((k) => [k, r[k] == null ? null : r[k]])) : null;
+  }
+  function restorePayment(id, before) {
+    if (before) Inv.patch(id, (x) => Object.assign(x, before));
   }
 
   function markPaid(id, opts) {
-    const status = applyPayment(id, opts);
-    if (status)
-      toast(
-        status === "paid"
-          ? `${id} marked as paid.`
-          : `${id} recorded as part-paid.`,
-        "success",
-        { label: "Undo", run: () => undoPayment(id) },
-      );
+    const before = paymentState(id),
+      status = applyPayment(id, opts);
+    if (!status) return;
+    const r = Inv.get(id);
+    toast(
+      status === "paid"
+        ? `${id} marked as paid.`
+        : `${id} recorded as part-paid: ${fmtZ(balanceOf(r))} ${coinOf(r.net)} still due.`,
+      "success",
+      { label: "Undo", run: () => restorePayment(id, before) },
+    );
   }
 
   function dlRows(rows) {
@@ -1472,11 +1526,14 @@
     const r = Inv.get(id);
     if (!r) return;
     const coin = coinOf(r.net),
-      due = BigInt(r.zats);
+      due = BigInt(r.zats),
+      partial = r.status === "partial";
     $("paid-summary").replaceChildren(
       ...dlRows([
         ["Invoice", r.id],
         ["Amount due", `${Z.formatAmount(due)} ${coin}`],
+        partial && ["Received so far", `${fmtZ(receivedOf(r))} ${coin}`],
+        partial && ["Balance due", `${fmtZ(balanceOf(r))} ${coin}`],
         r.label && ["Item", r.label],
         ["Created", fmtDate(r.createdAt)],
       ]),
@@ -1485,15 +1542,17 @@
       e.textContent = coin;
     });
     $("paid-amount").value = Z.formatAmount(
-      r.receivedZats ? BigInt(r.receivedZats) : due,
+      partial ? balanceOf(r) : r.receivedZats ? BigInt(r.receivedZats) : due,
     );
-    $("paid-txid").value = r.txid || "";
+    $("paid-txid").value = partial ? "" : r.txid || "";
     setInvalid("paid-amount", false);
     setInvalid("paid-txid", false);
     setStatus(
       "paid-amount-status",
       "",
-      "Less than the amount due records the invoice as part-paid.",
+      partial
+        ? `This payment is added to the ${fmtZ(receivedOf(r))} ${coin} already received. Less than the balance keeps the invoice part-paid.`
+        : "Less than the amount due records the invoice as part-paid.",
     );
     setStatus(
       "paid-txid-status",
@@ -1771,11 +1830,12 @@
   function renderPOS() {
     const r = Inv.get(S.posId);
     if (!r) return closePOS();
-    const zats = BigInt(r.zats),
+    const req = requestOf(r),
+      zats = req.zats,
       coin = coinOf(r.net);
     $("pos-business").textContent = settings.business || "Pay with Zcash";
     try {
-      $("pos-qr").replaceChildren(QR.canvas(r.uri, 960));
+      $("pos-qr").replaceChildren(QR.canvas(req.uri, 960));
     } catch (e) {
       $("pos-qr").replaceChildren(
         el("p", { text: "QR unavailable: use Copy link." }),
@@ -1784,15 +1844,17 @@
     $("pos-qr").setAttribute("aria-label", qrLabel(zats, r.address, r.net));
     $("pos-expired").hidden = !isExpired(r);
     $("pos-amount").replaceChildren(
-      ...amountNodes(zats, r.amountTag),
+      ...amountNodes(zats, req.tag),
       el("span", { class: "unit", text: coin }),
     );
-    $("pos-fiat").textContent = r.fiat
-      ? `≈ ${fmtFiat(+r.fiat.value, r.fiat.cur)}`
-      : "";
+    $("pos-fiat").textContent = req.balance
+      ? `Balance due · ${fmtZ(receivedOf(r))} ${coin} already paid`
+      : r.fiat
+        ? `≈ ${fmtFiat(+r.fiat.value, r.fiat.cur)}`
+        : "";
     $("pos-label").textContent = r.label || "";
     $("pos-meta").textContent = r.id + (r.net === "test" ? " · TESTNET" : "");
-    $("pos-paid").hidden = !isOpen(r);
+    $("pos-paid").hidden = $("pos-other").hidden = !isOpen(r);
     if (r.status === "paid" && $("pos-success").hidden) {
       $("pos-success-text").textContent =
         `${Z.formatAmount(BigInt(r.receivedZats || r.zats))} ${coin} received`;
@@ -1966,7 +2028,7 @@
     );
     const sub =
       r.status === "partial" && r.receivedZats
-        ? `received ${fmtZ(r.receivedZats)}`
+        ? `received ${fmtZ(r.receivedZats)} · ${fmtZ(balanceOf(r))} due`
         : r.fiat
           ? fmtFiat(+r.fiat.value, r.fiat.cur)
           : null;
@@ -1978,11 +2040,11 @@
           {
             type: "button",
             class: "btn btn-secondary btn-sm",
-            "aria-label": `Mark ${r.id} as paid`,
+            "aria-label": `Record a payment for ${r.id}`,
             onclick: () => openPaidDialog(r.id),
           },
           icon("check"),
-          "Paid",
+          "Record payment",
         ),
       );
     actions.append(rowMenu(r));
@@ -2021,11 +2083,17 @@
     const items = [
       item("external", "Open", () => openInvoice(r.id)),
       live || r.status === "partial"
-        ? item("expand", "Show to customer", () => openPOS(r))
+        ? item(
+            "expand",
+            r.status === "partial" ? "Request balance" : "Show to customer",
+            () => openPOS(r),
+          )
         : null,
-      live
-        ? item("link", "Copy payment link", () =>
-            copyText(r.uri, "Payment link copied."),
+      live || r.status === "partial"
+        ? item(
+            "link",
+            r.status === "partial" ? "Copy balance link" : "Copy payment link",
+            () => copyText(requestOf(r).uri, "Payment link copied."),
           )
         : null,
       r.status !== "void"
@@ -2139,7 +2207,8 @@
   function printInvoice(r) {
     const coin = coinOf(r.net),
       zats = BigInt(r.zats),
-      paid = r.status === "paid" || r.status === "partial";
+      req = requestOf(r),
+      paid = r.status === "paid";
     const rows = [
       ["Invoice", r.id],
       ["Date", fmtDate(r.createdAt)],
@@ -2153,6 +2222,7 @@
       ["Status", statusInfo(r).label],
       r.paidAt && ["Paid on", fmtDate(r.paidAt)],
       r.receivedZats && ["Received", `${fmtZ(r.receivedZats)} ${coin}`],
+      req.balance && ["Balance due", `${Z.formatAmount(req.zats)} ${coin}`],
       r.txid && ["Transaction", r.txid],
       r.message && ["Message", r.message],
       ["Pay to", r.address],
@@ -2193,16 +2263,15 @@
           : el(
               "div",
               { class: "doc-qr" },
-              qrImg(r.uri, "Payment QR code"),
-              el("div", { text: "Scan with any Zcash wallet" }),
+              qrImg(req.uri, req.balance ? "Balance payment QR code" : "Payment QR code"),
+              el("div", {
+                text: req.balance ? "Scan to pay the balance" : "Scan with any Zcash wallet",
+              }),
             ),
       ),
       paid
-        ? el("div", {
-            class: "doc-stamp",
-            text: r.status === "paid" ? "PAID" : "PART-PAID",
-          })
-        : el("div", { class: "doc-uri", text: r.uri }),
+        ? el("div", { class: "doc-stamp", text: "PAID" })
+        : el("div", { class: "doc-uri", text: req.uri }),
       el("div", {
         class: "doc-foot",
         text: paid
@@ -2244,10 +2313,12 @@
     }
     const res = Z.reconcile(
       text,
+      /* A part-paid invoice is matched against its balance, skipping payments already recorded. */
       invoices.map((r) => ({
         id: r.id,
-        zats: BigInt(r.zats),
+        zats: r.status === "partial" ? balanceOf(r) : BigInt(r.zats),
         status: r.status === "partial" ? "pending" : r.status,
+        seen: r.status === "partial" ? paymentsOf(r).map((p) => p.txid).filter(Boolean) : [],
       })),
     );
     if (!res.matches.length) {
@@ -3311,23 +3382,24 @@
     /* preview actions (sharing a draft saves it first) */
     $("pv-pos").addEventListener("click", () => withInvoice(openPOS));
     $("pv-copy-uri").addEventListener("click", () =>
-      withInvoice((r) => copyText(r.uri, "Payment link copied.")),
+      withInvoice((r) => copyText(requestOf(r).uri, "Payment link copied.")),
     );
     $("pv-open").addEventListener("click", (e) => {
       if (!withInvoice()) e.preventDefault();
     });
     $("pv-png").addEventListener("click", () =>
-      withInvoice((r) =>
+      withInvoice((r) => {
+        const req = requestOf(r);
         paymentPng(
-          r.uri,
+          req.uri,
           {
             title: settings.business,
-            amount: `${fmtZ(r.zats)} ${coinOf(r.net)}`,
+            amount: `${Z.formatAmount(req.zats)} ${coinOf(r.net)}${req.balance ? " balance" : ""}`,
             sub: [r.label, r.id].filter(Boolean).join(" · "),
           },
-          `${r.id}.png`,
-        ),
-      ),
+          `${r.id}${req.balance ? "-balance" : ""}.png`,
+        );
+      }),
     );
     $("pv-print").addEventListener("click", () => withInvoice(printInvoice));
     $("pv-paid").addEventListener("click", () =>
@@ -3388,7 +3460,14 @@
     );
     $("pos-copy").addEventListener("click", () => {
       const r = Inv.get(S.posId);
-      if (r) copyText(r.uri, "Payment link copied.");
+      if (r) copyText(requestOf(r).uri, "Payment link copied.");
+    });
+    /* A short (or different) payment at the counter: record the amount without leaving the
+       customer screen. Part-paid re-renders it with the balance QR; paid in full shows success. */
+    $("pos-other").addEventListener("click", async () => {
+      const id = S.posId;
+      if (!id) return;
+      if (await posGuard("Merchant PIN", "Enter the PIN to record a payment.")) openPaidDialog(id);
     });
     /* Press and hold to confirm, so a tap from the customer's side of the screen does nothing. */
     const holdBtn = $("pos-paid"),

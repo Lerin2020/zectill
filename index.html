@@ -440,7 +440,7 @@
                 </svg>Print</button>
               <button type="button" id="pv-paid" class="btn btn-secondary" disabled><svg class="icon">
                   <use href="#i-check" />
-                </svg>Mark paid</button>
+                </svg>Record payment</button>
             </div>
           </div>
           <p class="fine" id="pv-note">Sharing, printing or showing the code saves the invoice automatically. The
@@ -683,7 +683,7 @@
         <button type="submit" value="cancel" class="btn btn-ghost" formnovalidate>Cancel</button>
         <button type="submit" value="ok" id="paid-ok" class="btn btn-primary"><svg class="icon">
             <use href="#i-check" />
-          </svg>Mark as paid</button>
+          </svg>Record payment</button>
       </div>
     </form>
   </dialog>
@@ -881,6 +881,7 @@
             <use href="#i-x" />
           </svg>Close <kbd class="sr-only">Esc</kbd></button>
       </div>
+      <button type="button" id="pos-other" class="pos-other">Received a different amount?</button>
     </div>
     <div id="pos-success" class="pos-success" hidden>
       <div class="pos-success-inner">

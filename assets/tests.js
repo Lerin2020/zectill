@@ -940,6 +940,20 @@
     hit("INV-TAG001") && hit("INV-TAG001").verdict === "paid" && hit("INV-TAG001").via === "amount",
   );
   t("Untagged round amounts are never matched by amount alone", () => !hit("INV-ROUND5"));
+  /* Part-paid invoices are matched against their balance; already-recorded payments are skipped. */
+  const firstTx = "a1".repeat(32), balTx = "b2".repeat(32);
+  const history = [
+    `2026-10-28 09:41, 0.004, "INV-BAL001 · Table 7", ${firstTx}`,
+    `2026-10-28 12:15, 0.0028, "INV-BAL001 · Table 7", ${balTx}`,
+  ].join("\n");
+  const balInv = { id: "INV-BAL001", zats: 280000n, status: "pending", seen: [firstTx.toUpperCase()] };
+  t("Balance payment of a part-paid invoice: paid in full, first payment not counted twice", () => {
+    const m = Z.reconcile(history, [balInv]).matches[0];
+    return m && m.verdict === "paid" && m.found === 280000n && m.txids.join() === balTx;
+  });
+  t("A history with only already-recorded payments matches nothing", () =>
+    Z.reconcile(history.split("\n")[0], [balInv]).matches.length === 0,
+  );
   t("A precise untagged price (0.23726834) is matched by amount alone", () => {
     const m = Z.reconcile("2026-10-28 11:00, 0.23726834, no memo", [
       { id: "INV-PREC01", zats: 23726834n, status: "pending" },

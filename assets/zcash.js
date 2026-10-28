@@ -1404,7 +1404,10 @@
 
   /**
    * Matches pasted wallet history (CSV export, memo text or zcashd JSON) to invoices.
-   * invoices: [{ id, zats: BigInt, status }]. A line matches when it contains an invoice ID;
+   * invoices: [{ id, zats: BigInt, status, seen?: [txid] }]. zats is what is still due (the
+   * balance, for a part-paid invoice); lines whose txid is in `seen` were already recorded and
+   * are skipped, so pasting the same history twice never counts a payment twice.
+   * A line matches when it contains an invoice ID;
    * an amount equal to the amount due is preferred, otherwise the first decimal number is used.
    * A line with no ID still matches when its amount is not round (tagged, see amountTag, or
    * precise to the zatoshi) and belongs to exactly one open invoice. Each match reports `via: "memo" | "amount"`.
@@ -1455,6 +1458,7 @@
         ids.forEach((id) => {
           const inv = byId.get(id),
             due = BigInt(inv.zats);
+          if (txid && (inv.seen || []).some((t) => t.toLowerCase() === txid.toLowerCase())) return;
           const a = agg.get(id) || {
             inv,
             lines: [],
