@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Zectill · Zcash invoicing</title>
+  <meta name="description"
+    content="Shielded Zcash invoices and batch payouts as ZIP-321 payment requests and QR codes. Runs entirely in your browser.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0f1318">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Zectill · a keyless till for shielded Zcash">
+  <meta property="og:description" content="Shielded Zcash invoices, customer QR screen and batch payouts, built to the ZIP-321 and ZIP-316 specs. No server, no keys.">
+  <meta property="og:url" content="https://zectill-sp.netlify.app/">
+  <meta property="og:image" content="https://zectill-sp.netlify.app/docs/invoice.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/zectill.css">
+</head>
+
+<body class="app">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <svg class="sprite" width="0" height="0" aria-hidden="true">
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </symbol>
+    <symbol id="i-link" viewBox="0 0 24 24">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </symbol>
+    <symbol id="i-external" viewBox="0 0 24 24">
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M12 15V3" />
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m17 8-5-5-5 5" />
+      <path d="M12 3v12" />
+    </symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </symbol>
+    <symbol id="i-printer" viewBox="0 0 24 24">
+      <path d="M6 9V2h12v7" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="8" />
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="M20 6 9 17l-5-5" />
+    </symbol>
+    <symbol id="i-check-all" viewBox="0 0 24 24">
+      <path d="M18 6 7 17l-5-5" />
+      <path d="m22 10-7.5 7.5L13 16" />
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </symbol>
+    <symbol id="i-backspace" viewBox="0 0 24 24">
+      <path d="M10 5a2 2 0 0 0-1.34.52l-6.33 5.74a1 1 0 0 0 0 1.48l6.33 5.74A2 2 0 0 0 10 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" />
+      <path d="m12 9 6 6" />
+      <path d="m18 9-6 6" />
+    </symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24">
+      <path d="M4 21v-7" />
+      <path d="M4 10V3" />
+      <path d="M12 21v-9" />
+      <path d="M12 8V3" />
+      <path d="M20 21v-5" />
+      <path d="M20 12V3" />
+      <path d="M1 14h6" />
+      <path d="M9 8h6" />
+      <path d="M17 16h6" />
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24">
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M5 12h14" />
+      <path d="M12 5v14" />
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24">
+      <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+      <path d="M21 3v5h-5" />
+    </symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <path d="M14 14h3v3h-3z" />
+      <path d="M21 14v.01" />
+      <path d="M14 21h.01" />
+      <path d="M17.5 17.5H21V21h-3.5z" />
+    </symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24">
+      <path d="M4 2v20l3-2 3 2 2-1.5L14 22l3-2 3 2V2l-3 2-3-2-2 1.5L10 2 7 4z" />
+      <path d="M8 9h8" />
+      <path d="M8 13h8" />
+      <path d="M8 17h5" />
+    </symbol>
+    <symbol id="i-list" viewBox="0 0 24 24">
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="M3 6h.01" />
+      <path d="M3 12h.01" />
+      <path d="M3 18h.01" />
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 24 24">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24">
+      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+      <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+      <path d="M7 12h10" />
+    </symbol>
+    <symbol id="i-info" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24">
+      <path d="m9 18 6-6-6-6" />
+    </symbol>
+    <symbol id="i-more" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+      <circle cx="5" cy="12" r="1" />
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+      <path d="m9 12 2 2 4-4" />
+    </symbol>
+    <symbol id="i-ban" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" />
+      <path d="m4.9 4.9 14.2 14.2" />
+    </symbol>
+    <symbol id="i-file" viewBox="0 0 24 24">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M16 13H8" />
+      <path d="M16 17H8" />
+    </symbol>
+    <symbol id="i-database" viewBox="0 0 24 24">
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+      <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3" />
+    </symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24">
+      <path d="M9 3h6" />
+      <path d="M10 3v6.5L4.5 19A2 2 0 0 0 6.2 22h11.6a2 2 0 0 0 1.7-3L14 9.5V3" />
+      <path d="M7 15h10" />
+    </symbol>
+  </svg>
+
+  <div id="net-banner" class="net-banner" hidden><svg class="icon">
+      <use href="#i-flask" />
+    </svg>Testnet mode: TAZ has no monetary value. Use it to test wallets end-to-end.</div>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#invoice" aria-label="Zectill home">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="9" fill="currentColor" />
+          <path d="M10 10.5h12L10 21.5h12" />
+        </svg>
+        <span class="brand-name">Zectill</span><span class="brand-tag">Shielded invoicing · ZIP-321</span>
+      </a>
+      <div class="topbar-actions">
+        <div id="net" class="segmented net-switch" role="radiogroup" aria-label="Network">
+          <button type="button" role="radio" data-v="main"><span class="seg-dot"></span><span>Main<span
+                class="net-long">net</span></span></button>
+          <button type="button" role="radio" data-v="test"><span class="seg-dot"></span><span>Test<span
+                class="net-long">net</span></span></button>
+        </div>
+        <button id="theme-btn" type="button" class="btn btn-ghost btn-icon" aria-label="Theme"><svg class="icon">
+            <use href="#i-moon" />
+          </svg></button>
+        <button id="settings-btn" type="button" class="btn btn-ghost btn-icon" aria-label="Settings"
+          title="Settings"><svg class="icon">
+            <use href="#i-sliders" />
+          </svg></button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabbar" aria-label="Sections">
+    <div class="container">
+      <div id="tabs" class="tabs" role="tablist">
+        <button type="button" class="tab" role="tab" id="tab-invoice" data-v="invoice"
+          aria-controls="panel-invoice"><svg class="icon">
+            <use href="#i-qr" />
+          </svg>New invoice</button>
+        <button type="button" class="tab" role="tab" id="tab-invoices" data-v="invoices"
+          aria-controls="panel-invoices"><svg class="icon">
+            <use href="#i-list" />
+          </svg>Invoices<span id="tab-count" class="tab-count" aria-label="open invoices"></span></button>
+        <button type="button" class="tab" role="tab" id="tab-batch" data-v="batch" aria-controls="panel-batch"><svg
+            class="icon">
+            <use href="#i-users" />
+          </svg>Batch</button>
+        <button type="button" class="tab" role="tab" id="tab-inspect" data-v="inspect"
+          aria-controls="panel-inspect"><svg class="icon">
+            <use href="#i-scan" />
+          </svg>Inspect</button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main" class="container app-main">
+
+    <!-- ============================================================ NEW INVOICE -->
+    <section id="panel-invoice" role="tabpanel" aria-labelledby="tab-invoice" tabindex="-1">
+      <div class="layout">
+        <form id="inv-form" class="card" novalidate autocomplete="off">
+          <div class="card-head">
+            <div>
+              <h1 class="h2" id="inv-title">New invoice</h1>
+              <p class="muted">Your customer scans the code and their wallet pays you directly. Nothing leaves this
+                browser.</p>
+            </div>
+            <span id="inv-state" class="badge">Draft</span>
+          </div>
+
+          <div id="inv-locked" class="notice" hidden>
+            <svg class="icon">
+              <use href="#i-shield" />
+            </svg>
+            <div class="notice-body">
+              <div id="inv-locked-text">This invoice is saved, so its details are locked to match the QR code your
+                customer sees.</div>
+              <div class="row-wrap">
+                <button type="button" id="inv-new" class="btn btn-primary btn-sm"><svg class="icon">
+                    <use href="#i-plus" />
+                  </svg>New invoice</button>
+                <button type="button" id="inv-dup" class="btn btn-secondary btn-sm"><svg class="icon">
+                    <use href="#i-copy" />
+                  </svg>Duplicate as new</button>
+              </div>
+            </div>
+          </div>
+
+          <fieldset id="inv-fields" class="stack">
+            <div class="field">
+              <div class="field-head">
+                <label class="label" for="inv-address">Receive to <span class="req" aria-hidden="true">*</span></label>
+                <button type="button" id="inv-demo" class="link-btn edit-only">Use a demo address</button>
+              </div>
+              <textarea id="inv-address" class="input mono" rows="2" spellcheck="false" autocapitalize="off"
+                autocomplete="off" aria-describedby="inv-address-status"></textarea>
+              <div id="inv-address-status" class="field-status" aria-live="polite"></div>
+              <label class="check edit-only"><input type="checkbox" id="inv-remember"> Remember this address on this
+                device</label>
+            </div>
+
+            <div class="field">
+              <div class="field-head">
+                <label class="label" for="inv-amount">Amount <span class="req" aria-hidden="true">*</span></label>
+                <span id="inv-fiat-hint" class="field-meta num"></span>
+              </div>
+              <div class="amount-row">
+                <div class="input-wrap">
+                  <input id="inv-amount" class="input input-lg" inputmode="decimal" autocomplete="off"
+                    placeholder="0.00" aria-describedby="inv-amount-status">
+                  <span id="inv-unit-label" class="input-suffix">ZEC</span>
+                </div>
+                <div id="inv-unit" class="segmented" role="radiogroup" aria-label="Price in">
+                  <button type="button" role="radio" data-v="coin" class="coin">ZEC</button>
+                  <button type="button" role="radio" data-v="fiat" id="inv-unit-fiat">Fiat</button>
+                </div>
+                <select id="inv-currency" class="input" aria-label="Fiat currency" hidden></select>
+              </div>
+              <div id="inv-chips" class="chips edit-only" aria-label="Quick amounts"></div>
+              <div id="inv-quote" class="quote" hidden aria-live="polite">
+                <div class="quote-line"><span id="quote-text"></span><button type="button" id="quote-refresh"
+                    class="link-btn">Refresh rate</button></div>
+                <div class="meter" aria-hidden="true"><span id="quote-bar"></span></div>
+              </div>
+              <div id="inv-amount-status" class="field-status" aria-live="polite"></div>
+            </div>
+
+            <div class="field">
+              <div class="field-head">
+                <label class="label" for="inv-id">Invoice ID</label>
+                <span class="field-meta">Sent in the encrypted memo so you can match the payment</span>
+              </div>
+              <div class="input-row">
+                <input id="inv-id" class="input mono" maxlength="32" autocomplete="off" spellcheck="false"
+                  aria-describedby="inv-id-status">
+                <button type="button" id="inv-id-new" class="btn btn-secondary btn-icon edit-only"
+                  aria-label="Generate a new invoice ID" title="New ID"><svg class="icon">
+                    <use href="#i-refresh" />
+                  </svg></button>
+              </div>
+              <div id="inv-id-status" class="field-status" aria-live="polite"></div>
+            </div>
+
+            <details id="inv-more" class="more">
+              <summary><svg class="icon">
+                  <use href="#i-chevron" />
+                </svg>More details <span class="optional">item label, message, memo note</span></summary>
+              <div class="more-body">
+                <div class="grid-2">
+                  <div class="field">
+                    <label class="label" for="inv-label">Item or label <span class="optional">(optional)</span></label>
+                    <input id="inv-label" class="input" maxlength="80" placeholder="e.g. Flat white ×2">
+                  </div>
+                  <div class="field">
+                    <label class="label" for="inv-message">Message to customer <span
+                        class="optional">(optional)</span></label>
+                    <input id="inv-message" class="input" maxlength="120" placeholder="e.g. Thanks for visiting!">
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-head">
+                    <label class="label" for="inv-note">Memo note <span class="optional">(optional)</span></label>
+                    <span id="memo-bytes" class="byte-meter" aria-live="polite"></span>
+                  </div>
+                  <textarea id="inv-note" class="input" rows="2" placeholder="e.g. Table 4"
+                    aria-describedby="memo-preview"></textarea>
+                  <div id="inv-note-status" class="field-status" aria-live="polite"></div>
+                  <div class="hint">The memo your wallet will show for this payment:</div>
+                  <div id="memo-preview" class="memo-preview"></div>
+                </div>
+              </div>
+            </details>
+          </fieldset>
+
+          <div id="inv-actions" class="form-actions">
+            <button type="submit" id="inv-save" class="btn btn-primary"><svg class="icon">
+                <use href="#i-check" />
+              </svg>Save invoice</button>
+            <button type="button" id="inv-clear" class="btn btn-ghost">Clear</button>
+            <span class="spacer"></span>
+            <span class="fine">Saved invoices appear under <strong>Invoices</strong>.</span>
+          </div>
+        </form>
+
+        <aside class="card preview" aria-labelledby="pv-title">
+          <div class="card-head">
+            <h2 class="h3" id="pv-title">Customer view</h2>
+            <span id="pv-status" class="badge" role="status">Waiting for details</span>
+          </div>
+          <div id="pv-stage" class="qr-stage">
+            <div id="pv-qr" class="qr-frame" role="img" hidden></div>
+            <div id="pv-empty" class="qr-empty"><svg class="icon">
+                <use href="#i-qr" />
+              </svg><span id="pv-empty-msg">Add your address and an amount</span></div>
+            <div id="pv-stamp" class="qr-stamp" hidden><span><svg class="icon">
+                  <use href="#i-check" />
+                </svg><b id="pv-stamp-text">PAID</b></span></div>
+            <div id="pv-expired" class="qr-veil" hidden><svg class="icon">
+                <use href="#i-clock" />
+              </svg><span>Price quote expired</span><button type="button" id="pv-requote"
+                class="btn btn-primary btn-sm"><svg class="icon">
+                  <use href="#i-refresh" />
+                </svg>Refresh quote</button></div>
+          </div>
+          <div id="pv-density" class="qr-density"></div>
+          <div class="pv-amount"><span id="pv-amount">0</span><span class="unit coin">ZEC</span></div>
+          <div id="pv-fiat" class="pv-sub num"></div>
+          <dl class="meta-list">
+            <dt>Invoice</dt>
+            <dd id="pv-id" class="mono">–</dd>
+            <dt>Pay to</dt>
+            <dd id="pv-addr" class="mono">–</dd>
+          </dl>
+          <div class="uri-box">
+            <code id="pv-uri">zcash:…</code>
+            <button type="button" id="pv-copy-uri" class="btn btn-ghost btn-icon btn-sm" aria-label="Copy payment link"
+              title="Copy payment link" disabled><svg class="icon">
+                <use href="#i-copy" />
+              </svg></button>
+          </div>
+          <div class="actions">
+            <button type="button" id="pv-pos" class="btn btn-primary btn-lg btn-block" disabled><svg class="icon">
+                <use href="#i-expand" />
+              </svg>Show to customer</button>
+            <div class="actions-grid">
+              <a id="pv-open" class="btn btn-secondary" role="button" aria-disabled="true"><svg class="icon">
+                  <use href="#i-external" />
+                </svg>Open in wallet</a>
+              <button type="button" id="pv-png" class="btn btn-secondary" disabled><svg class="icon">
+                  <use href="#i-download" />
+                </svg>Save PNG</button>
+              <button type="button" id="pv-print" class="btn btn-secondary" disabled><svg class="icon">
+                  <use href="#i-printer" />
+                </svg>Print</button>
+              <button type="button" id="pv-paid" class="btn btn-secondary" disabled><svg class="icon">
+                  <use href="#i-check" />
+                </svg>Mark paid</button>
+            </div>
+          </div>
+          <p class="fine" id="pv-note">Sharing, printing or showing the code saves the invoice automatically. The
+            customer's wallet builds and signs the payment; Zectill never sees keys or funds.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================================ INVOICES -->
+    <section id="panel-invoices" role="tabpanel" aria-labelledby="tab-invoices" tabindex="-1" hidden>
+      <div class="page-head">
+        <div>
+          <h1 class="h2">Invoices</h1>
+          <p class="muted">Stored only in this browser. Back up from <button type="button" class="link-btn"
+              data-open-settings>Settings</button>.</p>
+        </div>
+        <div class="page-actions">
+          <button type="button" id="h-match" class="btn btn-secondary"><svg class="icon">
+              <use href="#i-check-all" />
+            </svg>Match payments</button>
+          <button type="button" id="h-csv" class="btn btn-secondary"><svg class="icon">
+              <use href="#i-download" />
+            </svg>Export CSV</button>
+          <button type="button" id="h-new" class="btn btn-primary"><svg class="icon">
+              <use href="#i-plus" />
+            </svg>New invoice</button>
+        </div>
+      </div>
+      <div id="h-stats" class="stats"></div>
+      <div class="toolbar">
+        <div class="search"><svg class="icon">
+            <use href="#i-search" />
+          </svg><input id="h-search" class="input" type="search" placeholder="Search ID, item, memo or txid"
+            aria-label="Search invoices"></div>
+        <div id="h-filter" class="segmented" role="radiogroup" aria-label="Filter by status">
+          <button type="button" role="radio" data-v="all">All</button>
+          <button type="button" role="radio" data-v="open">Open</button>
+          <button type="button" role="radio" data-v="paid">Paid</button>
+          <button type="button" role="radio" data-v="void">Void</button>
+        </div>
+      </div>
+      <div class="card list-card">
+        <ul id="h-list" class="inv-list" aria-label="Invoices"></ul>
+        <div id="h-empty" class="empty" hidden></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ BATCH -->
+    <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" tabindex="-1" hidden>
+      <div class="page-head">
+        <div>
+          <h1 class="h2">Batch payments</h1>
+          <p class="muted">Pay many people at once, split a bill, or settle a list of debts.</p>
+        </div>
+      </div>
+      <div id="b-mode" class="mode-picker" role="radiogroup" aria-label="Batch type">
+        <button type="button" role="radio" class="mode-card" data-v="one-many"><span class="mode-top"><span
+              class="mode-title">Payout</span><span class="mode-flow">1 → many</span></span><span class="mode-sub">One
+            wallet pays everyone in a single transaction.</span></button>
+        <button type="button" role="radio" class="mode-card" data-v="many-one"><span class="mode-top"><span
+              class="mode-title">Bill split</span><span class="mode-flow">many → 1</span></span><span
+            class="mode-sub">Each person pays you their share.</span></button>
+        <button type="button" role="radio" class="mode-card" data-v="many-many"><span class="mode-top"><span
+              class="mode-title">Settlement</span><span class="mode-flow">many → many</span></span><span
+            class="mode-sub">One request per debt in a list.</span></button>
+      </div>
+      <div class="layout">
+        <div class="card stack">
+          <p id="b-desc" class="muted"></p>
+          <div id="b-merchant-field" class="field" hidden>
+            <label class="label" for="b-merchant">Receive to <span class="req" aria-hidden="true">*</span></label>
+            <textarea id="b-merchant" class="input mono" rows="2" spellcheck="false" autocomplete="off"
+              aria-describedby="b-merchant-status"></textarea>
+            <div id="b-merchant-status" class="field-status" aria-live="polite"></div>
+          </div>
+          <div id="b-ref-field" class="field" hidden>
+            <label class="label" for="b-ref">Reference <span class="optional">(added to every memo)</span></label>
+            <input id="b-ref" class="input mono" maxlength="40" placeholder="e.g. DINNER-OCT26" autocomplete="off">
+          </div>
+          <div class="field">
+            <div class="field-head">
+              <label class="label" for="b-input" id="b-input-label">Recipients</label>
+              <span id="b-format" class="field-meta mono"></span>
+            </div>
+            <div id="b-drop" class="dropzone">
+              <textarea id="b-input" class="input mono" rows="9" spellcheck="false" autocomplete="off"
+                aria-describedby="b-help"></textarea>
+              <div class="drop-hint">Drop a CSV file to import</div>
+            </div>
+            <p id="b-help" class="hint">One entry per line. Comma, semicolon, tab or space separated; a header row,
+              blank lines and # comments are ignored. Paste straight from a spreadsheet.</p>
+            <div class="row-wrap">
+              <button type="button" id="b-import" class="btn btn-secondary btn-sm"><svg class="icon">
+                  <use href="#i-upload" />
+                </svg>Import CSV</button>
+              <input type="file" id="b-file" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden>
+              <button type="button" id="b-demo" class="btn btn-ghost btn-sm">Fill demo data</button>
+              <button type="button" id="b-clear" class="btn btn-ghost btn-sm">Clear</button>
+            </div>
+          </div>
+          <div id="b-issues" class="issues" hidden></div>
+          <div id="b-table-wrap" class="table-wrap" hidden>
+            <table class="table">
+              <thead id="b-thead"></thead>
+              <tbody id="b-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="card preview" aria-labelledby="b-qr-title">
+          <div class="card-head">
+            <h2 class="h3" id="b-qr-title">Payment request</h2>
+            <span id="b-status" class="badge" role="status">Waiting</span>
+          </div>
+          <div id="b-stage" class="qr-stage">
+            <div id="b-qr" class="qr-frame" role="img" hidden></div>
+            <div id="b-empty" class="qr-empty"><svg class="icon">
+                <use href="#i-qr" />
+              </svg><span id="b-empty-msg">Add at least one valid line</span></div>
+          </div>
+          <div id="b-density" class="qr-density"></div>
+          <div class="stats stats-compact">
+            <div class="stat">
+              <div class="stat-label" id="b-count-label">Entries</div>
+              <div id="b-count" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Total <span class="coin">ZEC</span></div>
+              <div id="b-total" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Issues</div>
+              <div id="b-errors" class="stat-value">0</div>
+            </div>
+          </div>
+          <div class="uri-box">
+            <code id="b-uri">zcash:…</code>
+            <button type="button" id="b-copy-uri" class="btn btn-ghost btn-icon btn-sm"
+              aria-label="Copy this payment link" title="Copy this payment link" disabled><svg class="icon">
+                <use href="#i-copy" />
+              </svg></button>
+          </div>
+          <ul id="b-list" class="uri-list" aria-label="Generated requests" hidden></ul>
+          <div class="actions">
+            <div class="actions-grid">
+              <button type="button" id="b-copy" class="btn btn-secondary" disabled><svg class="icon">
+                  <use href="#i-copy" />
+                </svg><span>Copy link</span></button>
+              <a id="b-open" class="btn btn-secondary" role="button" aria-disabled="true"><svg class="icon">
+                  <use href="#i-external" />
+                </svg>Open in wallet</a>
+              <button type="button" id="b-png" class="btn btn-secondary" disabled><svg class="icon">
+                  <use href="#i-download" />
+                </svg>Save PNG</button>
+              <button type="button" id="b-print" class="btn btn-secondary" disabled><svg class="icon">
+                  <use href="#i-printer" />
+                </svg>Print</button>
+            </div>
+            <button type="button" id="b-save" class="btn btn-primary btn-block" disabled><svg class="icon">
+                <use href="#i-check" />
+              </svg>Save batch</button>
+          </div>
+          <p id="b-note" class="fine"></p>
+        </aside>
+      </div>
+      <section class="card saved-card" aria-labelledby="b-saved-title">
+        <div class="card-head">
+          <h2 class="h3" id="b-saved-title">Saved batches</h2>
+        </div>
+        <ul id="b-saved" class="saved-list"></ul>
+        <p id="b-saved-empty" class="fine">Nothing saved yet. Saved batches stay in this browser and can be reloaded or
+          edited.</p>
+      </section>
+    </section>
+
+    <!-- ============================================================ INSPECT -->
+    <section id="panel-inspect" role="tabpanel" aria-labelledby="tab-inspect" tabindex="-1" hidden>
+      <div class="page-head">
+        <div>
+          <h1 class="h2">Inspect</h1>
+          <p class="muted">Paste a <code>zcash:</code> payment link or any Zcash address to decode and check it with the
+            same rules wallets use (ZIP-321 and ZIP-316, mirroring librustzcash).</p>
+        </div>
+      </div>
+      <div class="card stack">
+        <div class="field">
+          <label class="label" for="x-input">Payment link or address</label>
+          <textarea id="x-input" class="input mono" rows="4" spellcheck="false" autocomplete="off"
+            placeholder="zcash:u1…?amount=0.5&amp;memo=…"></textarea>
+          <div class="row-wrap">
+            <button type="button" id="x-example" class="btn btn-ghost btn-sm">Try the ZIP-321 spec example</button>
+            <button type="button" id="x-clear" class="btn btn-ghost btn-sm">Clear</button>
+          </div>
+        </div>
+        <div id="x-result" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>Zectill runs entirely in your browser. No accounts, no servers, no keys.</span>
+      <span class="footer-links">
+        <a href="tests.html">Spec tests</a>
+        <a href="https://zips.z.cash/zip-0321" rel="noopener noreferrer" target="_blank">ZIP-321</a>
+        <a href="https://zips.z.cash/zip-0316" rel="noopener noreferrer" target="_blank">ZIP-316</a>
+      </span>
+    </div>
+  </footer>
+
+  <!-- ============================================================ DIALOGS -->
+  <dialog id="dlg-paid" aria-labelledby="paid-title">
+    <form method="dialog" class="dlg" id="paid-form" novalidate>
+      <div class="dlg-head">
+        <div>
+          <h2 id="paid-title">Record payment</h2>
+          <p>Confirm you can see this payment in your wallet. Zectill cannot see the blockchain.</p>
+        </div>
+        <button type="submit" value="cancel" class="btn btn-ghost btn-icon btn-sm" aria-label="Close"
+          formnovalidate><svg class="icon">
+            <use href="#i-x" />
+          </svg></button>
+      </div>
+      <div class="dlg-body">
+        <dl id="paid-summary" class="dlg-summary"></dl>
+        <div class="field">
+          <label class="label" for="paid-amount">Amount received (<span class="coin">ZEC</span>)</label>
+          <input id="paid-amount" class="input mono" inputmode="decimal" autocomplete="off">
+          <div id="paid-amount-status" class="field-status"></div>
+        </div>
+        <div class="field">
+          <label class="label" for="paid-txid">Transaction ID <span class="optional">(optional, from your
+              wallet)</span></label>
+          <input id="paid-txid" class="input mono" maxlength="64" spellcheck="false" autocomplete="off"
+            placeholder="64 hex characters">
+          <div id="paid-txid-status" class="field-status"></div>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <button type="submit" value="cancel" class="btn btn-ghost" formnovalidate>Cancel</button>
+        <button type="submit" value="ok" id="paid-ok" class="btn btn-primary"><svg class="icon">
+            <use href="#i-check" />
+          </svg>Mark as paid</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-match" class="dlg-wide" aria-labelledby="match-title">
+    <form method="dialog" class="dlg" novalidate>
+      <div class="dlg-head">
+        <div>
+          <h2 id="match-title">Match payments</h2>
+          <p>Paste your wallet's transaction history: a CSV export, copied memos, or
+            <code>z_listreceivedbyaddress</code> output. Lines are matched by the invoice ID in the memo, or by an
+            invoice's unique amount when the memo is missing. Nothing is uploaded.</p>
+        </div>
+        <button type="submit" value="cancel" class="btn btn-ghost btn-icon btn-sm" aria-label="Close"><svg class="icon">
+            <use href="#i-x" />
+          </svg></button>
+      </div>
+      <div class="dlg-body">
+        <div class="field">
+          <label class="label" for="match-input">Wallet history</label>
+          <textarea id="match-input" class="input mono" rows="6" spellcheck="false"
+            placeholder="2026-10-27 14:05, +0.5 ZEC, INV-7K2F9Q · Table 4, 3f2a…"></textarea>
+          <div class="row-wrap">
+            <button type="button" id="match-file-btn" class="btn btn-secondary btn-sm"><svg class="icon">
+                <use href="#i-upload" />
+              </svg>Load a file</button>
+            <input type="file" id="match-file" accept=".csv,.tsv,.txt,.json,text/*,application/json" hidden>
+            <span class="fine">Automatic detection would need a viewing key and a lightwalletd connection; see the
+              README roadmap.</span>
+          </div>
+        </div>
+        <div id="match-results" aria-live="polite"></div>
+      </div>
+      <div class="dlg-foot">
+        <button type="submit" value="cancel" class="btn btn-ghost">Close</button>
+        <button type="button" id="match-apply" class="btn btn-primary" disabled><svg class="icon">
+            <use href="#i-check-all" />
+          </svg>Apply</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-settings" aria-labelledby="settings-title">
+    <form method="dialog" class="dlg" novalidate>
+      <div class="dlg-head">
+        <div>
+          <h2 id="settings-title">Settings</h2>
+          <p>Saved in this browser only.</p>
+        </div>
+        <button type="submit" value="cancel" class="btn btn-ghost btn-icon btn-sm" aria-label="Close"><svg class="icon">
+            <use href="#i-x" />
+          </svg></button>
+      </div>
+      <div class="dlg-body">
+        <div class="field">
+          <label class="label" for="set-business">Business name</label>
+          <input id="set-business" class="input" maxlength="60"
+            placeholder="Shown on the customer screen, PNGs and receipts">
+        </div>
+        <div class="setting">
+          <div class="setting-text"><label class="label" for="set-currency">Fiat currency</label><small>For pricing in
+              local money (mainnet only)</small></div>
+          <select id="set-currency" class="input"></select>
+        </div>
+        <div class="setting">
+          <div class="setting-text"><label class="label" for="set-lock">Price lock</label><small>How long a fiat quote
+              stays valid</small></div>
+          <select id="set-lock" class="input">
+            <option value="5">5 minutes</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+          </select>
+        </div>
+        <div class="setting">
+          <div class="setting-text"><label class="label" for="set-unique">Unique amounts</label><small>Adds a tag of
+              under 0.00001 ZEC to each invoice so payments match even without the memo</small></div>
+          <input type="checkbox" id="set-unique" class="switch">
+        </div>
+        <div class="setting">
+          <div class="setting-text"><span class="label">Merchant PIN</span><small id="set-pin-status">Off. The customer
+              screen uses press-and-hold to confirm.</small></div>
+          <div class="row-wrap">
+            <button type="button" id="set-pin-off" class="btn btn-ghost btn-sm" hidden>Remove</button>
+            <button type="button" id="set-pin" class="btn btn-secondary btn-sm"><svg class="icon">
+                <use href="#i-shield" />
+              </svg>Set PIN</button>
+          </div>
+        </div>
+        <p class="fine">For a till that can't be left at all, also turn on your device's own lock: Guided Access on
+          iPhone and iPad, or screen pinning on Android.</p>
+        <div class="setting">
+          <div class="setting-text"><span class="label" id="set-theme-label">Theme</span><small>Customer screens are
+              always light for scanning</small></div>
+          <div id="set-theme" class="segmented" role="radiogroup" aria-labelledby="set-theme-label">
+            <button type="button" role="radio" data-v="dark">Dark</button><button type="button" role="radio"
+              data-v="light">Light</button><button type="button" role="radio" data-v="system">Auto</button>
+          </div>
+        </div>
+        <div class="setting">
+          <div class="setting-text"><span class="label">Backup</span><small>Invoices, batches and settings as one JSON
+              file</small></div>
+          <div class="row-wrap">
+            <button type="button" id="set-export" class="btn btn-secondary btn-sm"><svg class="icon">
+                <use href="#i-download" />
+              </svg>Export</button>
+            <button type="button" id="set-import" class="btn btn-secondary btn-sm"><svg class="icon">
+                <use href="#i-upload" />
+              </svg>Import</button>
+            <input type="file" id="set-import-file" accept=".json,application/json" hidden>
+          </div>
+        </div>
+        <div class="danger-zone">
+          <h3>Danger zone</h3>
+          <div class="row-wrap">
+            <button type="button" id="set-forget" class="btn btn-danger btn-sm">Forget saved addresses</button>
+            <button type="button" id="set-wipe" class="btn btn-danger btn-sm"><svg class="icon">
+                <use href="#i-trash" />
+              </svg>Erase all data</button>
+          </div>
+        </div>
+      </div>
+      <div class="dlg-foot"><button type="submit" value="ok" class="btn btn-primary">Done</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-pin" class="dlg-pin" aria-labelledby="pin-title">
+    <form method="dialog" class="dlg" novalidate>
+      <div class="dlg-head">
+        <div>
+          <h2 id="pin-title">Merchant PIN</h2>
+          <p id="pin-sub"></p>
+        </div>
+        <button type="submit" value="cancel" class="btn btn-ghost btn-icon btn-sm" aria-label="Cancel"><svg class="icon">
+            <use href="#i-x" />
+          </svg></button>
+      </div>
+      <div id="pin-body" class="dlg-body pin-body">
+        <div id="pin-dots" class="pin-dots" role="status" aria-label="0 digits entered"></div>
+        <p id="pin-msg" class="pin-msg" aria-live="assertive"></p>
+        <div id="pin-pad" class="pin-pad" aria-label="PIN keypad"></div>
+        <div class="pin-foot">
+          <button type="button" id="pin-forgot" class="link-btn">Forgot PIN?</button>
+          <button type="button" id="pin-ok" class="btn btn-primary">Continue</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-confirm" aria-labelledby="cf-title">
+    <form method="dialog" class="dlg">
+      <div class="dlg-head">
+        <div>
+          <h2 id="cf-title"></h2>
+          <p id="cf-body"></p>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <button type="submit" value="cancel" class="btn btn-ghost">Cancel</button>
+        <button type="submit" value="ok" id="cf-ok" class="btn btn-primary"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============================================================ CUSTOMER SCREEN -->
+  <div id="pos" class="pos" role="dialog" aria-modal="true" aria-labelledby="pos-amount" hidden>
+    <div class="pos-inner">
+      <div id="pos-business" class="pos-business"></div>
+      <div class="pos-prompt"><span class="pos-dot" aria-hidden="true"></span>Scan with any Zcash wallet</div>
+      <div class="pos-qr">
+        <div id="pos-qr" class="qr-frame" role="img"></div>
+        <div id="pos-expired" class="qr-veil" hidden><svg class="icon">
+            <use href="#i-clock" />
+          </svg><span>This price has expired.</span><button type="button" id="pos-requote"
+            class="btn btn-primary btn-sm"><svg class="icon">
+              <use href="#i-refresh" />
+            </svg>Refresh price</button></div>
+      </div>
+      <div id="pos-amount" class="pos-amount"></div>
+      <div id="pos-fiat" class="pos-fiat"></div>
+      <div id="pos-label" class="pos-label"></div>
+      <div id="pos-meta" class="pos-meta"></div>
+      <div id="pos-timer" class="pos-timer" hidden><svg class="icon">
+          <use href="#i-clock" />
+        </svg><span></span></div>
+      <div class="pos-bar">
+        <button type="button" id="pos-paid" class="btn btn-primary btn-hold" title="Press and hold to confirm"><svg class="icon">
+            <use href="#i-check" />
+          </svg>Hold: payment received</button>
+        <button type="button" id="pos-copy" class="btn btn-secondary"><svg class="icon">
+            <use href="#i-link" />
+          </svg>Copy link</button>
+        <button type="button" id="pos-close" class="btn btn-secondary"><svg class="icon">
+            <use href="#i-x" />
+          </svg>Close <kbd class="sr-only">Esc</kbd></button>
+      </div>
+    </div>
+    <div id="pos-success" class="pos-success" hidden>
+      <div class="pos-success-inner">
+        <div class="pos-check"><svg class="icon">
+            <use href="#i-check" />
+          </svg></div>
+        <h2>Thank you!</h2>
+        <p id="pos-success-text">Payment received</p>
+        <div class="row-wrap pos-success-actions">
+          <button type="button" id="pos-next" class="btn btn-secondary btn-lg"><svg class="icon">
+              <use href="#i-plus" />
+            </svg>Next customer</button>
+          <button type="button" id="pos-done" class="btn btn-secondary btn-lg">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <div id="print-root" class="print-root"></div>
+
+  <script src="vendor/qrcode-generator-2.0.4.js"></script>
+  <script src="assets/zcash.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Zectill tests</title>
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/zectill.css">
+</head>
+
+<body class="tests-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="./">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="9" fill="currentColor" />
+          <path d="M10 10.5h12L10 21.5h12" />
+        </svg>
+        <span class="brand-name">Zectill</span><span class="brand-tag">Spec tests</span>
+      </a>
+      <div class="topbar-actions"><a class="btn btn-secondary btn-sm" href="./">Back to the app</a></div>
+    </div>
+  </header>
+
+  <main id="main" class="container tests-main">
+    <section class="page-head">
+      <div>
+        <h1 class="h2">Spec test suite</h1>
+        <p class="muted">Runs the engine shipped in <code>assets/zcash.js</code> against official test vectors from
+          zcash/librustzcash, BIP 350, RFC 7693 and FIPS 180-4. Nothing is mocked.</p>
+      </div>
+    </section>
+
+    <div id="summary" class="summary" role="status"><span class="summary-count">…</span><span
+        class="summary-text">Running</span></div>
+    <div id="groups" class="test-groups"></div>
+    <details class="test-group raw-out">
+      <summary><span class="tg-name">Plain-text output</span></summary>
+      <pre id="plain"></pre>
+    </details>
+
+    <section class="card kit" aria-labelledby="kit-title">
+      <div class="card-head">
+        <div>
+          <h2 id="kit-title" class="h3">Wallet compatibility kit</h2>
+          <p class="muted">Scan each request with a real wallet on <strong>testnet</strong>, record what happened, and
+            paste the Markdown into the README. Wallet support for memos and multi-payment requests varies, so real
+            results beat guesses.</p>
+        </div>
+      </div>
+      <div class="kit-form">
+        <div class="field">
+          <label class="label" for="kit-addr">Your testnet Unified Address</label>
+          <textarea id="kit-addr" class="input mono" rows="2" spellcheck="false" autocomplete="off"
+            placeholder="utest1…"></textarea>
+          <p id="kit-status" class="hint" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label class="label" for="kit-wallet">Wallet and version</label>
+          <input id="kit-wallet" class="input" placeholder="e.g. Zashi 2.1 (iOS)" autocomplete="off">
+        </div>
+      </div>
+      <div id="kit-cases" class="kit-cases"></div>
+      <div class="row-wrap"><button id="kit-copy" class="btn btn-primary" type="button">Copy results as
+          Markdown</button></div>
+      <pre id="kit-md" class="kit-md" hidden></pre>
+    </section>
+  </main>
+
+  <script src="vendor/qrcode-generator-2.0.4.js"></script>
+  <script src="assets/zcash.js"></script>
+  <script src="assets/test-vectors.js"></script>
+  <script src="assets/tests.js"></script>
+</body>
+
+</html>
